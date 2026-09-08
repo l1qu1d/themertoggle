@@ -5,17 +5,22 @@ Repository: https://github.com/l1qu1d/themertoggle
 Permanent plugin ID: `io.github.l1qu1d.themertoggle`.
 Category: **Appearance**. Tags: **bar, quickshell, hyprland**.
 
-Keep the manifest and displayed version at `1.0.0` while the repository is private.
-Use Git commits to identify development changes; begin version increments after
-public release.
+The repository is public. Keep the manifest and displayed version at `1.0.0`
+until the maintainer requests a release increment. Use Git commits to identify
+development changes between releases.
 
-The repository starts private. Public visibility and marketplace publication are
-separate actions. Do not describe it as listed or verified before publication.
+Public visibility and marketplace publication are separate actions. Do not
+describe the plugin as listed or verified before marketplace approval.
 
-Before making it public, run the checks in [CONTRIBUTING.md](CONTRIBUTING.md),
-review the final diff and preview asset, and verify CI on the final commit. Enable
-GitHub private vulnerability reporting when public visibility makes it available.
-Remove the README's private-access paragraph at that point.
+Before each release, run the checks in [CONTRIBUTING.md](CONTRIBUTING.md), review
+the final diff and preview asset, and verify CI on the final commit. GitHub
+private vulnerability reporting is enabled for confidential reports.
+
+Main requires a pull request, resolved review conversations, and the current
+`test` GitHub Actions check. Only squash merges are allowed; force pushes and
+branch deletion are blocked. CodeRabbit is configured in `.coderabbit.yaml` to
+automatically review non-draft pull requests. Check its actual result on the PR
+before treating the review as complete.
 
 Follow the current marketplace [submission guide](https://github.com/omacom/omarchy-plugin-marketplace/blob/main/SUBMISSION.md)
 and [security policy](https://github.com/omacom/omarchy-plugin-marketplace/blob/main/SECURITY.md).

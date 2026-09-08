@@ -26,5 +26,5 @@ reviews:
         Read README.md, SECURITY.md, and CONTRIBUTING.md for the project
         contracts. Do not introduce keyboard binding changes, privileged
         installation, or runtime network dependencies. Keep version 1.0.0
-        while this repository is private. Prefer correctness findings over
+        until the maintainer requests a release increment. Prefer correctness findings over
         cosmetic rewrites and distinguish local tests from live desktop proof.

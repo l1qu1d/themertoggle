@@ -60,7 +60,7 @@ Download the [MP4 video](assets/demo.mp4), [logo](assets/logo.svg), or
 
 ## Install
 
-ThemerToggle currently installs directly from this private GitHub repository.
+Install ThemerToggle directly from this GitHub repository.
 You need Omarchy with its Quickshell shell, Python 3.10 or newer, and
 the installed `omarchy` and `omarchy-theme-color` commands. Python uses only its
 standard library, and the plugin does not need a separate installer or service.
@@ -69,9 +69,7 @@ standard library, and the plugin does not need a separate installer or service.
 omarchy plugin add https://github.com/l1qu1d/themertoggle.git --enable
 ```
 
-While the repository is private, your existing GitHub access must be able to
-clone it. After it becomes public, the same command works without repository
-access being granted first.
+The repository is public, so no repository access invitation is needed.
 
 The widget appears in the right bar section by default. Move it with Omarchy’s
 bar settings or with:
@@ -175,7 +173,7 @@ bash tests/qml-smoke.sh
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for the development workflow and
 [RELEASING.md](RELEASING.md) for release preparation. The manifest and displayed
-version remain `1.0.0` while this repository is private. Public visibility and
+version remain `1.0.0` until the next planned release. Public visibility and
 marketplace publication are separate steps, and this project does not claim
 marketplace approval before that process completes.
 
