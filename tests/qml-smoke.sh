@@ -40,6 +40,8 @@ else:
     with (Path(__file__).parent / 'calls').open('a') as f:
         f.write(json.dumps(sys.argv[1:])+'\n')
 PY
+# Build the demo asset before timed UI assertions begin.
+python3 "$test_dir/plugin/theme_toggle.py" list > /dev/null
 cat > "$test_dir/shell.qml" <<'QML'
 import QtQuick
 import Quickshell
@@ -66,6 +68,7 @@ ShellRoot {
     onTriggered: {
       try {
         if (step === 0) {
+          if (widget.catalog.themes.length === 0) return
           check(widget.catalog.themes.length === 2, "Catalog did not load")
           check(widget.choices.length === 1, "Theme grouping failed")
           widget.children.find(function(c) { return c.objectName === "themeToggleButton" }).triggerPress(Qt.LeftButton)
@@ -95,7 +98,7 @@ ShellRoot {
           check(!widget.loading && widget.errorText === "", "Selection failed")
           if (step === 5) { widget.open() }
           else if (step === 7) {
-            check(widget.previewItem.visible, "Decoded preview did not become visible")
+            check(widget.previewItem.visible, "Decoded preview did not become visible: ready=" + widget.previewReady + ", hover=" + JSON.stringify(widget.hoverTheme))
             check(widget.previewItem.QsWindow.window === widget.themeList.QsWindow.window, "Preview created a separate window")
             check(Math.abs(widget.lightButton.width - widget.darkButton.width) < 1, "Light and dark widths differ")
           }
@@ -103,7 +106,7 @@ ShellRoot {
             var row = widget.themeList.itemAtIndex(0)
             var thumb = row ? row.contentItem.children[0] : null
             check(thumb !== null, "Thumbnail item missing, count=" + widget.themeList.count + ",height=" + widget.themeList.height)
-            testInput.mouseMove(widget.lightButton, 2, 2)
+            testInput.mouseMove(widget.lightButton, widget.lightButton.width / 2, widget.lightButton.height / 2, 100)
             testInput.mouseMove(thumb, thumb.width / 2, thumb.height / 2, 50)
           } else {
             check(widget.previewReady && widget.previewItem.visible, "Stable hover preview flickered or disappeared")

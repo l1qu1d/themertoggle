@@ -16,6 +16,7 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
+          path: plugin
           persist-credentials: false
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -26,6 +27,6 @@ jobs:
       - name: Backend behavior
         env:
           OMARCHY_THEME_COLOR: ${{ github.workspace }}/.ci-omarchy/bin/omarchy-theme-color
-        run: python3 -m unittest discover -s tests -v
+        run: python3 -m unittest discover -s plugin/tests -v
       - name: Manifest compatibility
-        run: bash .ci-omarchy/bin/omarchy-plugin-validate .
+        run: bash .ci-omarchy/bin/omarchy-plugin-validate plugin
