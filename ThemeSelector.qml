@@ -19,7 +19,21 @@ Panel {
   readonly property alias lightButton: lightTab
   readonly property alias darkButton: darkTab
   readonly property alias previewItem: enlargedPreview
-  readonly property bool loading: busy || externalBusy
+  property bool themeApplied: false
+  property bool statusPending: false
+  readonly property bool applying: busy || externalBusy
+  readonly property bool loading: applying && !themeApplied
+  function themeReady() {
+    if (applying) { themeApplied = true; refresh() }
+  }
+  Connections {
+    target: Color
+    function onThemeShellValuesChanged() { root.themeReady() }
+  }
+  function checkStatus() {
+    if (statusCheck.running) statusPending = true
+    else statusCheck.running = true
+  }
   property var hoverAnchor: null
   property var hoverTheme: null
   property bool previewReady: false
@@ -46,12 +60,13 @@ Panel {
   implicitHeight: button.implicitHeight
 
   function refresh() {
-    if (!listing.running && !busy) listing.running = true
+    if (!listing.running) listing.running = true
   }
   function apply(args) {
-    if (loading) return
+    if (applying) return
     clearPreview()
     errorText = ""
+    themeApplied = false
     busy = true
     action.command = ["python3", backendPath].concat(args)
     action.running = true
@@ -70,23 +85,33 @@ Panel {
     path: Quickshell.env("HOME") + "/.local/state/omarchy-themertoggle/preferences.lock"
     watchChanges: true
     printErrors: false
-    onFileChanged: { reload(); if (!statusCheck.running) statusCheck.running = true }
+    onFileChanged: { reload(); root.checkStatus() }
   }
   Process {
     id: statusCheck
+    onExited: {
+      if (root.statusPending) {
+        root.statusPending = false
+        Qt.callLater(root.checkStatus)
+      }
+    }
     command: ["python3", root.backendPath, "status"]
     stdout: StdioCollector {
       onStreamFinished: {
-        try { var state = JSON.parse(text); root.externalBusy = state.busy === true }
+        try {
+          var state = JSON.parse(text)
+          if (state.busy === true && !root.applying) root.themeApplied = false
+          root.externalBusy = state.busy === true
+        }
         catch (e) { root.externalBusy = false }
       }
     }
   }
   Timer {
-    interval: 1000
+    interval: 100
     running: root.externalBusy
     repeat: true
-    onTriggered: if (!statusCheck.running) statusCheck.running = true
+    onTriggered: root.checkStatus()
   }
   FileView {
     path: Quickshell.env("HOME") + "/.local/state/omarchy/current/theme.name"
@@ -113,6 +138,8 @@ Panel {
     stderr: StdioCollector { id: actionError }
     onExited: function(code) {
       root.busy = false
+      root.externalBusy = false
+      root.checkStatus()
       if (code !== 0) {
         root.errorText = actionError.text.trim() || "Theme change failed."
         root.open()
@@ -153,15 +180,28 @@ Panel {
       id: enlargedPreview
       z: 100
       readonly property real gap: Style.space(12)
-      readonly property point parentOrigin: parent.mapToItem(null, 0, 0)
-      readonly property real leftRoom: Math.max(0, popup.cardOrigin.x - gap * 2)
-      readonly property real rightRoom: Math.max(0, popup.screenW - popup.cardOrigin.x - popup.contentWidth - gap * 2)
+      readonly property Item sceneRoot: {
+        var item = parent
+        while (item && item.parent) item = item.parent
+        return item
+      }
+      TransformWatcher { id: parentWatcher; a: enlargedPreview.sceneRoot; b: enlargedPreview.parent }
+      readonly property point parentOrigin: {
+        parentWatcher.transform
+        return parent.mapToItem(sceneRoot, 0, 0)
+      }
+      readonly property real menuLeft: parentOrigin.x - parent.x
+      readonly property real menuRight: menuLeft + popup.contentWidth
+      readonly property real leftRoom: Math.max(0, menuLeft - gap * 2)
+      readonly property real rightRoom: Math.max(0, popup.screenW - menuRight - gap * 2)
       readonly property bool onLeft: leftRoom >= rightRoom
-      width: Math.min(Style.space(620), Math.max(leftRoom, rightRoom))
-      height: Math.min(Style.space(390), popup.screenH - gap * 2)
-      x: (onLeft ? popup.cardOrigin.x - width - gap : popup.cardOrigin.x + popup.contentWidth + gap) - parentOrigin.x
+      width: Math.max(0, Math.min(Style.space(620), Math.max(leftRoom, rightRoom), popup.screenW - gap * 2))
+      height: Math.max(0, Math.min(Style.space(390), popup.screenH - gap * 2))
+      x: Math.max(gap, Math.min(popup.screenW - width - gap,
+          onLeft ? menuLeft - width - gap : menuRight + gap)) - parentOrigin.x
       y: {
-        var point = root.hoverAnchor ? root.hoverAnchor.mapToItem(null, 0, 0) : Qt.point(0, 0)
+        parentWatcher.transform
+        var point = root.hoverAnchor ? root.hoverAnchor.mapToItem(sceneRoot, 0, 0) : Qt.point(0, 0)
         return Math.max(gap, Math.min(popup.screenH - height - gap, point.y - height / 2)) - parentOrigin.y
       }
       visible: root.opened && root.previewReady && root.hoverTheme !== null && largeImage.status === Image.Ready && width > Style.space(100)
@@ -244,7 +284,7 @@ Panel {
           required property var modelData
           width: themes.width
           height: Style.space(78)
-          enabled: !root.loading
+          enabled: !root.applying
           highlighted: root.catalog[root.selectedMode] === modelData.id
           text: (root.catalog.current === modelData.id ? "✓  " : "    ") + modelData.name
           onClicked: root.apply(["select", modelData.id])

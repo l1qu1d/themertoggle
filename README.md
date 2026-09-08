@@ -45,7 +45,8 @@ Hover over a thumbnail briefly to see a large preview beside the menu.
 
 Switching begins without an artificial delay. Further presses while this plugin
 is applying a theme are ignored. An in-progress Omarchy theme change finishes
-normally so its app configurations and hooks can complete together.
+normally so its app configurations and hooks can complete together. The spinner
+stops when the shell loads the theme; remaining app hooks finish in the background.
 
 Mode detection follows Omarchy's own resolver, including custom palettes and
 overlays. The active theme is watched for changes made elsewhere. Theme lists

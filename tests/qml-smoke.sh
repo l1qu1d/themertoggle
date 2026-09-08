@@ -46,6 +46,7 @@ cat > "$test_dir/shell.qml" <<'QML'
 import QtQuick
 import Quickshell
 import QtTest
+import qs.Commons
 import Quickshell.Io
 import "plugin"
 ShellRoot {
@@ -62,6 +63,13 @@ ShellRoot {
   }
   property int step: 0
   function check(value, message) { if (!value) throw new Error(message) }
+  function checkBounds() {
+    var preview = widget.previewItem
+    var point = preview.mapToItem(preview.sceneRoot, 0, 0)
+    check(point.x >= 0 && point.y >= 0, "Preview crossed top/left screen edge")
+    check(point.x + preview.width <= preview.sceneRoot.width + 1, "Preview crossed right screen edge")
+    check(point.y + preview.height <= preview.sceneRoot.height + 1, "Preview crossed bottom screen edge")
+  }
   Timer {
     id: steps
     interval: 500; repeat: true; running: true
@@ -78,6 +86,9 @@ ShellRoot {
           check(widget.loading, "Spinner stopped before the setter finished")
           var button = widget.children.find(function(c) { return c.objectName === "themeToggleButton" })
           check(button.textRotation > 0, "Loading icon is not animated")
+          Color.loadShell("")
+          check(!widget.loading && widget.busy, "Spinner waited for post-theme work")
+          widget.press(Qt.LeftButton) // Completion work must still be guarded.
         } else if (step === 2) {
           check(!widget.loading && widget.errorText === "", "Spinner stayed on after completion")
           widget.children.find(function(c) { return c.objectName === "themeToggleButton" }).triggerPress(Qt.RightButton)
@@ -94,13 +105,21 @@ ShellRoot {
           widget.apply(["select", "day"])
         } else if (step === 4) {
           check(widget.loading, "Selection spinner missing")
+          widget.externalBusy = true // Model a previously sampled lock status.
         } else {
           check(!widget.loading && widget.errorText === "", "Selection failed")
           if (step === 5) { widget.open() }
           else if (step === 7) {
+            if (!widget.hoverTheme) {
+              var thumbRetry = widget.themeList.itemAtIndex(0).contentItem.children[0]
+              testInput.mouseMove(widget.lightButton, widget.lightButton.width / 2, widget.lightButton.height / 2, 100)
+              testInput.mouseMove(thumbRetry, thumbRetry.width / 2, thumbRetry.height / 2, 100)
+              return
+            }
             check(widget.previewItem.visible, "Decoded preview did not become visible: ready=" + widget.previewReady + ", hover=" + JSON.stringify(widget.hoverTheme))
             check(widget.previewItem.QsWindow.window === widget.themeList.QsWindow.window, "Preview created a separate window")
             check(Math.abs(widget.lightButton.width - widget.darkButton.width) < 1, "Light and dark widths differ")
+            checkBounds()
           }
           else if (step === 6) {
             var row = widget.themeList.itemAtIndex(0)
@@ -108,8 +127,19 @@ ShellRoot {
             check(thumb !== null, "Thumbnail item missing, count=" + widget.themeList.count + ",height=" + widget.themeList.height)
             testInput.mouseMove(widget.lightButton, widget.lightButton.width / 2, widget.lightButton.height / 2, 100)
             testInput.mouseMove(thumb, thumb.width / 2, thumb.height / 2, 50)
-          } else {
+          } else if (step === 8) {
             check(widget.previewReady && widget.previewItem.visible, "Stable hover preview flickered or disappeared")
+            widget.previewItem.parent.parent.x = widget.previewItem.sceneRoot.width - widget.previewItem.parent.parent.width - 6
+          } else if (step === 9) {
+            checkBounds()
+            check(widget.previewItem.onLeft, "Right-edge menu did not put preview on left")
+            widget.previewItem.parent.parent.x = 6
+            widget.previewItem.parent.parent.y = widget.previewItem.sceneRoot.height - widget.previewItem.parent.parent.height - 6
+          } else if (step === 10) {
+            checkBounds()
+            check(!widget.previewItem.onLeft, "Left-edge menu did not put preview on right")
+          } else {
+            checkBounds()
             if (Quickshell.env("THEME_TEST_CAPTURE")) {
               steps.stop()
               capture.running = true
@@ -126,7 +156,7 @@ ShellRoot {
   }
 }
 QML
-timeout 10 quickshell -p "$test_dir" > "$test_dir/log" 2>&1
+timeout 15 quickshell -p "$test_dir" > "$test_dir/log" 2>&1
 cat "$test_dir/log"
 rg -q 'THEME_TOGGLE_QML_PASS' "$test_dir/log"
 if rg -q 'TypeError|ReferenceError|Binding loop|THEME_TOGGLE_QML_FAIL' "$test_dir/log"; then exit 1; fi
