@@ -9,7 +9,7 @@
 
 <p align="center">Switch between your favorite Omarchy themes from the bar.</p>
 
-ThemerToggle is a native Omarchy Quattro bar widget for keeping a light theme
+ThemerToggle is a native Omarchy bar widget for keeping a light theme
 and a dark theme close at hand. Left click toggles between your remembered
 choices. Right click opens a selector where you can browse every installed
 theme, see local previews, and choose a theme directly.
@@ -51,7 +51,7 @@ Download the [MP4 video](assets/demo.mp4), [logo](assets/logo.svg), or
 ## Install
 
 ThemerToggle currently installs directly from this private GitHub repository.
-You need Omarchy Quattro with its Quickshell shell, Python 3.10 or newer, and
+You need Omarchy with its Quickshell shell, Python 3.10 or newer, and
 the installed `omarchy` and `omarchy-theme-color` commands. Python uses only its
 standard library, and the plugin does not need a separate installer or service.
 
