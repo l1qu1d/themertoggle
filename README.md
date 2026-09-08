@@ -170,7 +170,7 @@ bash tests/qml-smoke.sh
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for the development workflow and
 [RELEASING.md](RELEASING.md) for release preparation. The manifest and displayed
-version remain `1.0.0` until the next planned release. Public visibility and
+version remain `1.0.0` until the maintainer requests a release increment. Public visibility and
 marketplace publication are separate steps, and this project does not claim
 marketplace approval before that process completes.
 
