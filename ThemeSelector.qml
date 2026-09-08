@@ -318,26 +318,24 @@ Panel {
           font.pixelSize: Style.space(22)
           Accessible.name: "ThemerToggle"
         }
-        Column {
+        Text {
+          id: titleText
           anchors.left: headerLogo.right
           anchors.leftMargin: Style.space(12)
           anchors.verticalCenter: parent.verticalCenter
-          spacing: Style.space(3)
-          Text {
-            id: titleText
-            text: "ThemerToggle"
-            color: Color.foreground
-            font.family: Style.font.family
-            font.pixelSize: Style.font.body
-            font.bold: true
-          }
-          Text {
-            id: versionText
-            text: root.pluginVersion ? "v" + root.pluginVersion : ""
-            color: Color.muted
-            font.family: Style.font.family
-            font.pixelSize: Style.font.caption
-          }
+          text: "ThemerToggle"
+          color: Color.foreground
+          font.family: Style.font.family
+          font.pixelSize: Style.font.body
+          font.bold: true
+        }
+        Text {
+          id: versionText
+          anchors.centerIn: parent
+          text: root.pluginVersion ? "v" + root.pluginVersion : ""
+          color: Color.muted
+          font.family: Style.font.family
+          font.pixelSize: Style.font.caption
         }
         Button {
           id: sourceControl

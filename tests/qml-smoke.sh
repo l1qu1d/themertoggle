@@ -182,12 +182,11 @@ ShellRoot {
           } else {
             checkBounds()
             check(widget.titleLabel.text === "ThemerToggle", "Menu title missing")
-            check(widget.versionLabel.y >= widget.titleLabel.y + widget.titleLabel.height, "Version is not below title")
-            var titleCenter = widget.titleLabel.parent.x + widget.titleLabel.x + widget.titleLabel.width / 2
-            check(titleCenter < widget.titleLabel.parent.parent.width / 2, "Title is not beside the logo")
+            var titleCenter = widget.titleLabel.x + widget.titleLabel.width / 2
+            check(titleCenter < widget.titleLabel.parent.width / 2, "Title is not beside the logo")
             check(widget.closeButton.fontSize >= 20, "Close glyph is too small")
             check(widget.versionLabel.text === "v1.0.0", "Header version does not match manifest")
-            check(widget.versionLabel.x === widget.titleLabel.x, "Title and version are not left aligned")
+            check(Math.abs(widget.versionLabel.x + widget.versionLabel.width / 2 - widget.versionLabel.parent.width / 2) < 1, "Version is not centered")
             check(widget.sourceButton.x + widget.sourceButton.width <= widget.closeButton.x, "Source button overlaps Close")
             check(widget.sourceUrl.toString() === "https://github.com/l1qu1d/themertoggle", "Incorrect source URL")
             testInput.mouseClick(widget.sourceButton, widget.sourceButton.width / 2, widget.sourceButton.height / 2, Qt.LeftButton)

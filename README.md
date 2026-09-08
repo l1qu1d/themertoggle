@@ -50,7 +50,7 @@ stops when the shell loads the theme. Remaining hooks stay supervised and errors
 are still reported. If early readiness cannot be confirmed, the plugin waits for
 the command to finish.
 
-The selector header shows the name and installed version beside its logo.
+The selector header shows the name beside its logo and the installed version in the center.
 The Source button opens this repository in your browser; the X closes the menu.
 
 Mode detection follows Omarchy's own resolver, including custom palettes and
