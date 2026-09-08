@@ -178,8 +178,8 @@ marketplace approval before that process completes.
 
 ThemerToggle runs as your user inside Omarchy’s unsandboxed Quickshell shell. It
 reads local theme files and preview images, writes its preference and lock files,
-and invokes `omarchy theme set <theme-id>` with an argument list. It does not
-download code, collect telemetry, use sudo, install services, or edit keyboard
+and invokes `omarchy theme set <theme-id>` with an argument list. It does not download code or collect telemetry.
+No sudo or pkexec is required. It installs no services and edits no keyboard
 bindings. Omarchy’s own theme command and user hooks may have additional
 effects. The Source button opens the fixed repository URL only when clicked.
 
