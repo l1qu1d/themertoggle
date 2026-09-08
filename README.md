@@ -14,11 +14,19 @@ and a dark theme close at hand. Left click toggles between your remembered
 choices. Right click opens a selector where you can browse every installed
 theme, see local previews, and choose a theme directly.
 
-## Quick links
+## In this guide
 
-[Features](#features) · [Preview](#preview) · [Demo](#demo) · [Install](#install) ·
-[Usage](#usage) · [Disable or remove](#disable-or-remove) · [Theme discovery](#theme-discovery) · [Optional CLI](#optional-cli) ·
-[Development](#development) · [Security](#security) · [License](#license)
+- [See it in action](#demo)
+- [Features](#features)
+- [Preview](#preview)
+- [Install](#install)
+- [Using ThemerToggle](#usage)
+- [Theme discovery](#theme-discovery)
+- [Optional CLI](#optional-cli)
+- [Disable or remove](#disable-or-remove)
+- [Development](#development)
+- [Security](#security)
+- [License](#license)
 
 ## Features
 
@@ -40,6 +48,8 @@ The screenshot uses original demonstration palettes to show the selector.
 ## Demo
 
 [![Watch the ThemerToggle demo](assets/demo.gif)](assets/demo.mp4)
+
+Watch toolbar toggling, right-click theme selection, and enlarged hover previews.
 
 The video records the native interface using original demonstration palettes
 and a mock theme setter. It illustrates the controls and previews; theme-switch
