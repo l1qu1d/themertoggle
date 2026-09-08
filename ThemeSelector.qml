@@ -20,6 +20,7 @@ Panel {
   property string pluginVersion: ""
   readonly property alias closeButton: closeControl
   readonly property alias versionLabel: versionText
+  readonly property alias titleLabel: titleText
   FileView {
     path: decodeURIComponent(Qt.resolvedUrl("manifest.json").toString().replace(/^file:\/\//, ""))
     onLoaded: {
@@ -303,7 +304,7 @@ Panel {
       Keys.onEscapePressed: root.close()
       Item {
         Layout.fillWidth: true
-        implicitHeight: Style.space(30)
+        implicitHeight: Style.space(48)
         Text {
           anchors.left: parent.left
           anchors.verticalCenter: parent.verticalCenter
@@ -313,20 +314,34 @@ Panel {
           font.pixelSize: Style.space(22)
           Accessible.name: "ThemerToggle"
         }
-        Text {
-          id: versionText
+        Column {
           anchors.centerIn: parent
-          text: root.pluginVersion ? "v" + root.pluginVersion : ""
-          color: Color.foreground
-          font.family: Style.font.family
-          font.pixelSize: Style.font.caption
+          spacing: Style.space(3)
+          Text {
+            id: titleText
+            anchors.horizontalCenter: parent.horizontalCenter
+            text: "ThemerToggle"
+            color: Color.foreground
+            font.family: Style.font.family
+            font.pixelSize: Style.font.body
+            font.bold: true
+          }
+          Text {
+            id: versionText
+            anchors.horizontalCenter: parent.horizontalCenter
+            text: root.pluginVersion ? "v" + root.pluginVersion : ""
+            color: Color.muted
+            font.family: Style.font.family
+            font.pixelSize: Style.font.caption
+          }
         }
         Button {
           id: closeControl
           anchors.right: parent.right
           anchors.verticalCenter: parent.verticalCenter
-          width: Style.space(30)
-          height: Style.space(30)
+          width: Style.space(36)
+          height: Style.space(36)
+          fontSize: Style.space(26)
           text: "×"
           Accessible.name: "Close ThemerToggle"
           onClicked: root.close()
@@ -334,7 +349,7 @@ Panel {
       }
       Text {
         Layout.fillWidth: true
-        text: root.loading ? "Applying theme…" : "Choose a theme to use and remember."
+        text: root.loading ? "Applying theme…" : "Pick your light and dark favorites."
         color: Color.foreground
         font.family: Style.font.family
         font.pixelSize: Style.font.caption

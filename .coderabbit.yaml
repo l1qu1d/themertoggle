@@ -1,0 +1,30 @@
+# yaml-language-server: $schema=https://coderabbit.ai/integrations/schema.v2.json
+language: en-US
+reviews:
+  profile: chill
+  request_changes_workflow: false
+  poem: false
+  auto_review:
+    enabled: true
+    drafts: false
+  path_instructions:
+    - path: '**/*.qml'
+      instructions: >-
+        Prioritize observable UI behavior, reactive coordinate transforms,
+        screen bounds, centered icons, keyboard accessibility, and QML process
+        lifetimes. A new toggle may start after readiness while older hook
+        processes remain supervised. Stale events must not clear newer work.
+        Use the native smoke test for interaction regressions.
+    - path: '**/*.py'
+      instructions: >-
+        Preserve Omarchy's canonical theme resolver, overlays, and setter.
+        Review lock ownership, atomic preferences, early readiness, failure
+        handling, and process supervision. Never infer readiness from a theme
+        name change alone. Test with isolated homes and fake setters.
+    - path: '**/*'
+      instructions: >-
+        Read README.md, SECURITY.md, and CONTRIBUTING.md for the project
+        contracts. Do not introduce keyboard binding changes, privileged
+        installation, or runtime network dependencies. Keep version 1.0.0
+        while this repository is private. Prefer correctness findings over
+        cosmetic rewrites and distinguish local tests from live desktop proof.

@@ -179,7 +179,12 @@ ShellRoot {
             check(!widget.previewItem.onLeft, "Left-edge menu did not put preview on right")
           } else {
             checkBounds()
-            check(widget.versionLabel.text === "v1.0.2", "Header version does not match manifest")
+            check(widget.titleLabel.text === "ThemerToggle", "Menu title missing")
+            check(widget.versionLabel.y >= widget.titleLabel.y + widget.titleLabel.height, "Version is not below title")
+            var titleCenter = widget.titleLabel.parent.x + widget.titleLabel.x + widget.titleLabel.width / 2
+            check(Math.abs(titleCenter - widget.titleLabel.parent.parent.width / 2) < 1, "Title is not centered in header")
+            check(widget.closeButton.fontSize >= 20, "Close glyph is too small")
+            check(widget.versionLabel.text === "v1.0.0", "Header version does not match manifest")
             check(Math.abs(widget.versionLabel.x + widget.versionLabel.width / 2 - widget.versionLabel.parent.width / 2) < 1, "Header version is not centered")
             testInput.mouseClick(widget.closeButton, widget.closeButton.width / 2, widget.closeButton.height / 2, Qt.LeftButton)
             check(!widget.opened, "Close button did not close selector")

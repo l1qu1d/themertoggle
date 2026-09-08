@@ -5,6 +5,10 @@ Repository: https://github.com/l1qu1d/themertoggle
 Permanent plugin ID: `io.github.l1qu1d.themertoggle`.
 Category: **Appearance**. Tags: **bar, quickshell, hyprland**.
 
+Keep the manifest and displayed version at `1.0.0` while the repository is private.
+Use Git commits to identify development changes; begin version increments after
+public release.
+
 The repository starts private. Public visibility and marketplace publication are
 separate actions. Do not describe it as listed or verified before publication.
 

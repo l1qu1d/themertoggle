@@ -33,3 +33,10 @@ If the shell retains cached QML, restart it when no active shell app will be int
 Describe observable behavior changes and the checks performed in pull requests.
 Report security issues through [SECURITY.md](SECURITY.md). Contributions are
 licensed under GPL-3.0-only.
+
+## CodeRabbit
+
+The root `.coderabbit.yaml` configures automatic reviews of non-draft pull
+requests, with focused QML and Python review guidance. CodeRabbit's GitHub app
+must have access to this repository for reviews to run. Configuration alone does
+not install or authorize the app. See the [CodeRabbit configuration guide](https://docs.coderabbit.ai/getting-started/yaml-configuration).
