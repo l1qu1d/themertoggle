@@ -18,9 +18,11 @@ private vulnerability reporting is enabled for confidential reports.
 
 Main requires a pull request, resolved review conversations, and the current
 `test` GitHub Actions check. Only squash merges are allowed; force pushes and
-branch deletion are blocked. CodeRabbit is configured in `.coderabbit.yaml` to
-automatically review non-draft pull requests. Check its actual result on the PR
-before treating the review as complete.
+branch deletion are blocked. CodeRabbit is configured in `.coderabbit.yaml` for non-draft pull requests.
+Its current open-source eligibility rules can skip automatic reviews for
+repositories with fewer than 10 stars. If its status comment skips a review,
+use the **Trigger review** checkbox or comment `@coderabbitai full review`.
+Check its actual result on the PR before treating the review as complete.
 
 Follow the current marketplace [submission guide](https://github.com/omacom/omarchy-plugin-marketplace/blob/main/SUBMISSION.md)
 and [security policy](https://github.com/omacom/omarchy-plugin-marketplace/blob/main/SECURITY.md).
