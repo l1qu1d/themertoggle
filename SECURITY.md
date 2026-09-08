@@ -10,8 +10,13 @@ process lock under `~/.local/state/omarchy-themertoggle/`.
 Theme changes run `omarchy theme set <installed-theme-id>` using an argument
 array, without shell interpolation. Omarchy then updates its normal application
 configurations and runs the user's installed theme hooks. ThemerToggle does not
-bypass those hooks or stop the setter midway. Only one plugin switch may run at
-a time; repeated requests are ignored rather than queued.
+bypass those hooks or stop the setter midway. Only one plugin switch may commit at
+a time; requests during that critical step are ignored rather than queued. The
+helper reads its own setter child's `/proc/<pid>/fdinfo/9` and matches Omarchy's
+runtime lock file to confirm that staging and shell application have finished.
+It then saves the committed choice, releases the plugin lock, and allows another
+switch while supervising the earlier process through its remaining hooks. If that
+readiness contract is unavailable, it waits for normal command completion.
 
 The plugin makes no network requests, downloads no code, collects no telemetry,
 and accesses no account credentials. Preview images are local files loaded by Qt.

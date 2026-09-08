@@ -14,6 +14,18 @@ Panel {
   property string backendPath: decodeURIComponent(Qt.resolvedUrl("theme_toggle.py").toString().replace(/^file:\/\//, ""))
   property var catalog: ({themes: [], current: "", mode: "dark", light: "", dark: ""})
   property string errorText: ""
+  property var activeAction: null
+  property int finishingActions: 0
+  property int statusGeneration: 0
+  property string pluginVersion: ""
+  readonly property alias closeButton: closeControl
+  readonly property alias versionLabel: versionText
+  FileView {
+    path: decodeURIComponent(Qt.resolvedUrl("manifest.json").toString().replace(/^file:\/\//, ""))
+    onLoaded: {
+      try { root.pluginVersion = JSON.parse(text()).version || "" } catch (e) { root.pluginVersion = "" }
+    }
+  }
   property bool busy: false
   property bool externalBusy: false
   readonly property alias lightButton: lightTab
@@ -32,7 +44,7 @@ Panel {
   }
   function checkStatus() {
     if (statusCheck.running) statusPending = true
-    else statusCheck.running = true
+    else { statusCheck.generation = statusGeneration; statusCheck.running = true }
   }
   property var hoverAnchor: null
   property var hoverTheme: null
@@ -68,8 +80,11 @@ Panel {
     errorText = ""
     themeApplied = false
     busy = true
-    action.command = ["python3", backendPath].concat(args)
-    action.running = true
+    statusGeneration++
+    var job = actionFactory.createObject(root, {command: ["python3", backendPath].concat(args)})
+    activeAction = job
+    finishingActions++
+    job.running = true
   }
   function press(buttonCode) {
     if (buttonCode === Qt.RightButton) {
@@ -80,7 +95,7 @@ Panel {
       apply(["toggle"])
     }
   }
-  Component.onCompleted: { refresh(); statusCheck.running = true }
+  Component.onCompleted: { refresh(); checkStatus() }
   FileView {
     path: Quickshell.env("HOME") + "/.local/state/omarchy-themertoggle/preferences.lock"
     watchChanges: true
@@ -89,6 +104,7 @@ Panel {
   }
   Process {
     id: statusCheck
+    property int generation: 0
     onExited: {
       if (root.statusPending) {
         root.statusPending = false
@@ -99,6 +115,7 @@ Panel {
     stdout: StdioCollector {
       onStreamFinished: {
         try {
+          if (statusCheck.generation !== root.statusGeneration) return
           var state = JSON.parse(text)
           if (state.busy === true && !root.applying) root.themeApplied = false
           root.externalBusy = state.busy === true
@@ -133,18 +150,45 @@ Panel {
     stderr: StdioCollector { id: listError }
     onExited: function(code) { if (code !== 0) root.errorText = listError.text.trim() || "Could not read themes." }
   }
-  Process {
-    id: action
-    stderr: StdioCollector { id: actionError }
-    onExited: function(code) {
-      root.busy = false
-      root.externalBusy = false
-      root.checkStatus()
-      if (code !== 0) {
-        root.errorText = actionError.text.trim() || "Theme change failed."
-        root.open()
+  Component {
+    id: actionFactory
+    Process {
+      id: job
+      stdout: SplitParser {
+        onRead: function(line) {
+          var state
+          try { state = JSON.parse(line) } catch (e) { return }
+          if (state.event !== "ready" || root.activeAction !== job) return
+          root.statusGeneration++
+          root.activeAction = null
+          root.busy = false
+          root.externalBusy = false
+          root.themeApplied = true
+          var next = Object.assign({}, root.catalog)
+          next.current = state.selected
+          next.mode = state.mode
+          next[state.mode] = state.selected
+          root.catalog = next
+          root.refresh()
+        }
       }
-      root.refresh()
+      stderr: StdioCollector { id: actionError }
+      onExited: function(code) {
+        if (root.activeAction === job) {
+          root.activeAction = null
+          root.busy = false
+          root.externalBusy = false
+          root.statusGeneration++
+          root.checkStatus()
+        }
+        root.finishingActions--
+        if (code !== 0) {
+          root.errorText = actionError.text.trim() || "Theme change failed."
+          root.open()
+        }
+        root.refresh()
+        Qt.callLater(function() { job.destroy() })
+      }
     }
   }
   BarIconButton {
@@ -154,6 +198,29 @@ Panel {
     bar: root.bar
     text: root.loading ? "󰔟" : (root.catalog.mode === "light" ? "󰖙" : "󰖔")
     textRotation: root.loading ? spinner.angle : 0
+    iconComponent: Component {
+      Item {
+        id: iconCanvas
+        objectName: "centeredThemeIcon"
+        rotation: button.textRotation
+        readonly property real paintedCenterY: glyph.y + glyph.baselineOffset + metrics.tightBoundingRect.y + metrics.tightBoundingRect.height / 2
+        TextMetrics {
+          id: metrics
+          text: button.text
+          font.family: button.fontFamily
+          font.pixelSize: Math.max(1, Math.round(button.fontSize))
+        }
+        Text {
+          id: glyph
+          text: button.text
+          color: button.foreground
+          font: metrics.font
+          renderType: Text.NativeRendering
+          x: (iconCanvas.width - metrics.tightBoundingRect.width) / 2 - metrics.tightBoundingRect.x
+          y: (iconCanvas.height - metrics.tightBoundingRect.height) / 2 - metrics.tightBoundingRect.y - baselineOffset
+        }
+      }
+    }
     QtObject { id: spinner; property real angle: 0 }
     NumberAnimation {
       target: spinner
@@ -234,12 +301,36 @@ Panel {
       anchors.fill: parent
       spacing: Style.space(10)
       Keys.onEscapePressed: root.close()
-      Text {
-        text: "ThemerToggle"
-        color: Color.foreground
-        font.family: Style.font.family
-        font.pixelSize: Style.font.body
-        font.bold: true
+      Item {
+        Layout.fillWidth: true
+        implicitHeight: Style.space(30)
+        Text {
+          anchors.left: parent.left
+          anchors.verticalCenter: parent.verticalCenter
+          text: "󰔎"
+          color: Color.foreground
+          font.family: Style.font.family
+          font.pixelSize: Style.space(22)
+          Accessible.name: "ThemerToggle"
+        }
+        Text {
+          id: versionText
+          anchors.centerIn: parent
+          text: root.pluginVersion ? "v" + root.pluginVersion : ""
+          color: Color.foreground
+          font.family: Style.font.family
+          font.pixelSize: Style.font.caption
+        }
+        Button {
+          id: closeControl
+          anchors.right: parent.right
+          anchors.verticalCenter: parent.verticalCenter
+          width: Style.space(30)
+          height: Style.space(30)
+          text: "×"
+          Accessible.name: "Close ThemerToggle"
+          onClicked: root.close()
+        }
       }
       Text {
         Layout.fillWidth: true

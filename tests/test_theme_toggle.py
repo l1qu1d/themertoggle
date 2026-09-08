@@ -25,6 +25,7 @@ class ThemeTests(unittest.TestCase):
         self.bin.mkdir()
         self.env = {'HOME': str(self.home), 'OMARCHY_PATH': str(self.stock),
                     'OMARCHY_THEME_COLOR': os.environ.get('OMARCHY_THEME_COLOR', '/usr/share/omarchy/bin/omarchy-theme-color'),
+                    'XDG_RUNTIME_DIR': str(self.home),
                     'PATH': str(self.bin) + ':' + os.environ['PATH']}
         self.patch = patch.dict(os.environ, self.env)
         self.patch.start()
@@ -212,7 +213,7 @@ if (h/'fail').exists():
             (self.home/'release').touch()
             output, errors = first.communicate(timeout=3)
             self.assertEqual(first.returncode, 0, errors)
-            self.assertEqual(json.loads(output)['selected'], 'day')
+            self.assertEqual(json.loads(output.splitlines()[-1])['selected'], 'day')
             self.assertEqual(self.calls(), [['theme','set','day']])
         finally:
             if first.poll() is None:
@@ -238,3 +239,80 @@ if (h/'fail').exists():
         self.theme('other', 'mode = "dark"')
         backend.write_preferences({'light': 'other'})
         self.assertEqual(backend.toggle_theme().id, 'day')
+
+    def test_ready_releases_lock_while_hook_tail_remains_supervised(self):
+        import selectors
+        import time
+        fake = self.bin / 'omarchy'
+        fake.write_text('''#!/usr/bin/env python3
+import fcntl,json,os,sys,time
+from pathlib import Path
+h=Path.home()
+fd=os.open(h/'omarchy-theme-set.lock',os.O_CREAT|os.O_WRONLY,0o600)
+os.dup2(fd,9)
+fcntl.flock(9,fcntl.LOCK_EX)
+with (h/'calls').open('a') as f: f.write(json.dumps(sys.argv[1:])+'\\n')
+while not (h/('commit-'+sys.argv[3])).exists(): time.sleep(.01)
+(h/'.local/state/omarchy/current/theme.name').write_text(sys.argv[3])
+while not (h/('unlock-'+sys.argv[3])).exists(): time.sleep(.01)
+fcntl.flock(9,fcntl.LOCK_UN)
+while not (h/'finish-hooks').exists(): time.sleep(.01)
+if (h/'fail-hooks').exists():
+    print('late hook failure',file=sys.stderr)
+    sys.exit(1)
+''')
+        processes = []
+        def launch():
+            process = subprocess.Popen([sys.executable, str(PROJECT/'theme_toggle.py'), 'toggle'],
+                                       stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+            processes.append(process)
+            return process
+        def wait_for(predicate):
+            deadline = time.monotonic() + 3
+            while not predicate() and time.monotonic() < deadline:
+                time.sleep(.01)
+            self.assertTrue(predicate())
+        def read_ready(process):
+            with selectors.DefaultSelector() as selector:
+                selector.register(process.stdout, selectors.EVENT_READ)
+                self.assertTrue(selector.select(3), 'ready event was not flushed')
+                return json.loads(process.stdout.readline())
+        try:
+            first = launch()
+            wait_for(lambda: len(self.calls()) == 1)
+            self.assertTrue(backend.is_busy())
+            (self.home/'commit-day').touch()
+            wait_for(lambda: backend._read_current_id() == 'day')
+            # A visible name update alone is not enough while staging stays locked.
+            blocked = subprocess.run([sys.executable, str(PROJECT/'theme_toggle.py'), 'toggle'],
+                                     capture_output=True, text=True, timeout=1)
+            self.assertEqual(json.loads(blocked.stdout), {'busy': True})
+            self.assertEqual(backend.read_preferences(), {})
+            (self.home/'unlock-day').touch()
+            self.assertEqual(read_ready(first), {'event': 'ready', 'selected': 'day', 'mode': 'light'})
+            self.assertFalse(backend.is_busy())
+            self.assertIsNone(first.poll())
+            second = launch()
+            wait_for(lambda: len(self.calls()) == 2)
+            time.sleep(.05)  # Let the backend observe the setter's held lock.
+            (self.home/'commit-night').touch()
+            (self.home/'unlock-night').touch()
+            self.assertEqual(read_ready(second)['selected'], 'night')
+            self.assertIsNone(first.poll())
+            self.assertIsNone(second.poll())
+            self.assertEqual(backend.read_preferences(), {'light': 'day', 'dark': 'night'})
+            (self.home/'fail-hooks').touch()
+            (self.home/'finish-hooks').touch()
+            for process in processes:
+                output, errors = process.communicate(timeout=3)
+                self.assertEqual(process.returncode, 1)
+                self.assertIn('late hook failure', errors)
+            self.assertFalse(backend.is_busy())
+        finally:
+            (self.home/'commit-day').touch()
+            (self.home/'unlock-day').touch()
+            (self.home/'commit-night').touch()
+            (self.home/'unlock-night').touch()
+            (self.home/'finish-hooks').touch()
+            for process in processes:
+                process.communicate(timeout=3)

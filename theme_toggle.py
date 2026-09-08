@@ -20,8 +20,9 @@ import shutil
 import subprocess
 import sys
 import tempfile
+import time
 from dataclasses import dataclass
-from typing import Any, Iterator, Mapping, Sequence
+from typing import Any, Callable, Iterator, Mapping, Sequence
 
 
 DEFAULT_OMARCHY_PATH = Path("/usr/share/omarchy")
@@ -444,90 +445,167 @@ def catalog() -> dict[str, Any]:
     }
 
 
-def _apply_theme(theme_id: str) -> None:
-    """Apply exactly the command used by Omarchy's public CLI."""
-
+def _theme_stamp() -> tuple[int, int, int] | None:
     try:
-        completed = subprocess.run(
-            ["omarchy", "theme", "set", theme_id],
-            check=False,
-            capture_output=True,
-            text=True,
-        )
-    except OSError as exc:
-        raise ThemeError(f"could not apply theme '{theme_id}': {exc}") from exc
-    if completed.returncode != 0:
-        details = (completed.stderr or completed.stdout or "").strip()
-        suffix = f": {details}" if details else ""
-        raise ThemeError(f"could not apply theme '{theme_id}'{suffix}")
+        stat = current_theme_path().stat()
+        return stat.st_ino, stat.st_mtime_ns, stat.st_size
+    except OSError:
+        return None
 
 
-def select_theme(theme_id: str) -> Theme:
-    """Apply and remember one theme only after Omarchy reports success."""
+def _setter_lock_state(pid: int) -> bool | None:
+    """Read this setter's fd9 lock, never a concurrent setter's lock.
 
-    with preferences_lock():
-        theme = _theme_by_id(list(_discover_candidates()), theme_id)
-        if theme is None:
-            raise ThemeError(f"unknown theme '{theme_id}'")
-        theme = _classify(theme)
-        _apply_theme(theme.id)
-        preferences = read_preferences()
-        if theme.mode in MODES:
-            preferences[theme.mode] = theme.id
+    Omarchy's CLI execs theme-set, which releases fd9 after staging and shell
+    application, before app hooks. If this contract is unavailable, wait for
+    process completion instead of guessing from the visible palette alone.
+    """
+    try:
+        descriptor = Path(f"/proc/{pid}/fd/9").stat()
+        lock = (Path(os.environ.get("XDG_RUNTIME_DIR") or "/tmp") /
+                "omarchy-theme-set.lock").stat()
+        if (descriptor.st_dev, descriptor.st_ino) != (lock.st_dev, lock.st_ino):
+            return None
+        info = Path(f"/proc/{pid}/fdinfo/9").read_text()
+        return any(line.startswith("lock:") and "FLOCK" in line and "WRITE" in line
+                   for line in info.splitlines())
+    except OSError:
+        return None
+
+
+class ThemeApplication:
+    """Keep the setter supervised after it releases its staging lock."""
+
+    def __init__(self, theme_id: str):
+        self.theme_id = theme_id
+        # Files avoid pipe backpressure while waiting for early readiness and
+        # retain both streams for an eventual app-hook failure.
+        self.stdout = tempfile.TemporaryFile(mode="w+t")
+        self.stderr = tempfile.TemporaryFile(mode="w+t")
+        try:
+            self.process = subprocess.Popen(
+                ["omarchy", "theme", "set", theme_id],
+                stdout=self.stdout, stderr=self.stderr, text=True)
+        except OSError as exc:
+            self.stdout.close()
+            self.stderr.close()
+            raise ThemeError(f"could not apply theme '{theme_id}': {exc}") from exc
+
+    def finish(self) -> None:
+        try:
+            result = self.process.wait()
+            if result != 0:
+                self.stderr.seek(0)
+                self.stdout.seek(0)
+                details = (self.stderr.read() or self.stdout.read()).strip()
+                suffix = f": {details}" if details else ""
+                raise ThemeError(f"could not apply theme '{self.theme_id}'{suffix}")
+        finally:
+            self.stdout.close()
+            self.stderr.close()
+
+
+def _apply_theme(theme_id: str) -> ThemeApplication:
+    """Return once this setter has committed, retaining its supervised tail."""
+    before = _theme_stamp()
+    application = ThemeApplication(theme_id)
+    observed_lock = False
+    try:
+        while application.process.poll() is None:
+            lock_state = _setter_lock_state(application.process.pid)
+            if lock_state is True:
+                observed_lock = True
+            elif (observed_lock and lock_state is False and
+                  _theme_stamp() != before and _read_current_id() == theme_id):
+                return application
+            time.sleep(0.01)
+        # Validate errors before callers save preferences or announce readiness.
+        if application.process.returncode != 0:
+            application.finish()
+        return application
+    except BaseException:
+        if not application.stdout.closed:
+            application.finish()
+        raise
+
+
+def select_theme(theme_id: str, on_ready: Callable[[Theme], None] | None = None) -> Theme:
+    """Apply and remember a theme after Omarchy commits its critical section."""
+
+    with contextlib.ExitStack() as completion:
+        with preferences_lock():
+            theme = _theme_by_id(list(_discover_candidates()), theme_id)
+            if theme is None:
+                raise ThemeError(f"unknown theme '{theme_id}'")
+            theme = _classify(theme)
+            application = _apply_theme(theme.id)
+            completion.callback(application.finish)
+            preferences = read_preferences()
+            if theme.mode in MODES:
+                preferences[theme.mode] = theme.id
+                try:
+                    write_preferences(preferences)
+                except OSError as exc:
+                    raise ThemeError(f"could not save preferences: {exc}") from exc
+
+        if on_ready is not None:
+            on_ready(theme)
+    return theme
+
+
+def toggle_theme(on_ready: Callable[[Theme], None] | None = None) -> Theme:
+    """Switch to the remembered opposite mode or its deterministic fallback."""
+
+    with contextlib.ExitStack() as completion:
+        with preferences_lock():
+            themes = list(_discover_candidates())
+            current_id = _read_current_id()
+            current = _theme_by_id(themes, current_id) if current_id else None
+            # The staged palette is authoritative. Only resolve the source when
+            # no usable staged palette exists, and classify candidates on demand.
+            active_mode = _active_mode(current_id, None)
+            classified: dict[str, Theme] = {}
+            def classify(theme: Theme) -> Theme:
+                if theme.id not in classified:
+                    classified[theme.id] = _classify(theme)
+                return classified[theme.id]
+            if active_mode is None and current is not None:
+                active_mode = classify(current).mode
+            if active_mode is None:
+                shown = current_id or "unknown"
+                raise ThemeError(f"cannot determine current theme mode for '{shown}'")
+            target_mode = "dark" if active_mode == "light" else "light"
+            preferences = read_preferences()
+            remembered = preferences.get(target_mode)
+            target = _theme_by_id(themes, remembered) if remembered else None
+            if target is not None:
+                target = classify(target)
+            if target is None or target.mode != target_mode:
+                target = next((resolved for candidate in themes
+                               if (resolved := classify(candidate)).mode == target_mode), None)
+            if target is None:
+                raise ThemeError(f"no {target_mode} theme is installed")
+
+            # Save only after staging and shell application commit successfully.
+            application = _apply_theme(target.id)
+            completion.callback(application.finish)
+            if current_id:
+                preferences[active_mode] = current_id
+            preferences[target_mode] = target.id
             try:
                 write_preferences(preferences)
             except OSError as exc:
                 raise ThemeError(f"could not save preferences: {exc}") from exc
-        return theme
 
-
-def toggle_theme() -> Theme:
-    """Switch to the remembered opposite mode or its deterministic fallback."""
-
-    with preferences_lock():
-        themes = list(_discover_candidates())
-        current_id = _read_current_id()
-        current = _theme_by_id(themes, current_id) if current_id else None
-        # The staged palette is authoritative. Only resolve the source when
-        # no usable staged palette exists, and classify candidates on demand.
-        active_mode = _active_mode(current_id, None)
-        classified: dict[str, Theme] = {}
-        def classify(theme: Theme) -> Theme:
-            if theme.id not in classified:
-                classified[theme.id] = _classify(theme)
-            return classified[theme.id]
-        if active_mode is None and current is not None:
-            active_mode = classify(current).mode
-        if active_mode is None:
-            shown = current_id or "unknown"
-            raise ThemeError(f"cannot determine current theme mode for '{shown}'")
-        target_mode = "dark" if active_mode == "light" else "light"
-        preferences = read_preferences()
-        remembered = preferences.get(target_mode)
-        target = _theme_by_id(themes, remembered) if remembered else None
-        if target is not None:
-            target = classify(target)
-        if target is None or target.mode != target_mode:
-            target = next((resolved for candidate in themes
-                           if (resolved := classify(candidate)).mode == target_mode), None)
-        if target is None:
-            raise ThemeError(f"no {target_mode} theme is installed")
-
-        # Do not alter either preference until the external command succeeds.
-        _apply_theme(target.id)
-        if current_id:
-            preferences[active_mode] = current_id
-        preferences[target_mode] = target.id
-        try:
-            write_preferences(preferences)
-        except OSError as exc:
-            raise ThemeError(f"could not save preferences: {exc}") from exc
-        return target
+        if on_ready is not None:
+            on_ready(target)
+    return target
 
 
 def _print_json(value: Mapping[str, Any]) -> None:
     json.dump(value, sys.stdout, sort_keys=False, separators=(",", ":"))
     sys.stdout.write("\n")
+    sys.stdout.flush()
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -549,7 +627,12 @@ def main(argv: Sequence[str] | None = None) -> int:
         elif args.command == "list":
             _print_json(catalog())
         else:
-            theme = select_theme(args.slug) if args.command == "select" else toggle_theme()
+            def ready(theme: Theme) -> None:
+                _print_json({"event": "ready", "selected": theme.id, "mode": theme.mode})
+            if args.command == "select":
+                theme = select_theme(args.slug, on_ready=ready)
+            else:
+                theme = toggle_theme(on_ready=ready)
             _print_json({"selected": theme.id, "mode": theme.mode})
     except ThemeBusy:
         _print_json({"busy": True})

@@ -18,7 +18,8 @@ desktop theme. They need the installed `omarchy-theme-color` resolver; set
 `OMARCHY_THEME_COLOR` to another checkout's resolver when testing off Omarchy.
 The native QML smoke test needs Quickshell, QtTest, ripgrep, and a running Wayland
 session. It briefly opens its own test selector and exercises clicks, busy state,
-equal tab widths, and stable hover previews. It never runs the real theme setter.
+equal tab widths, centered icons, stationary-pointer repeat clicks, the header
+controls, and stable hover previews within screen bounds. It never runs the real theme setter.
 
 CI runs backend tests and manifest validation against the exact upstream Omarchy
 commit recorded in `.github/workflows/ci.yml`. Native compositor testing remains

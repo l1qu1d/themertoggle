@@ -43,10 +43,14 @@ Dark tabs have equal widths; selecting a row applies and remembers that theme.
 A check marks the current theme and a highlight marks the remembered choice.
 Hover over a thumbnail briefly to see a large preview beside the menu.
 
-Switching begins without an artificial delay. Further presses while this plugin
-is applying a theme are ignored. An in-progress Omarchy theme change finishes
-normally so its app configurations and hooks can complete together. The spinner
-stops when the shell loads the theme; remaining app hooks finish in the background.
+Switching begins without an artificial delay. Further presses are ignored only
+while Omarchy is committing the theme. Once that step finishes, you can toggle
+again without moving the pointer or waiting for slower app hooks. The spinner
+stops when the shell loads the theme. Remaining hooks stay supervised and errors
+are still reported. If early readiness cannot be confirmed, the plugin waits for
+the command to finish.
+
+The selector header has a ThemerToggle icon, the installed version, and a close button.
 
 Mode detection follows Omarchy's own resolver, including custom palettes and
 overlays. The active theme is watched for changes made elsewhere. Theme lists
@@ -70,6 +74,9 @@ python3 ~/.config/omarchy/plugins/io.github.l1qu1d.themertoggle/theme_toggle.py 
 python3 ~/.config/omarchy/plugins/io.github.l1qu1d.themertoggle/theme_toggle.py list
 python3 ~/.config/omarchy/plugins/io.github.l1qu1d.themertoggle/theme_toggle.py status
 ```
+
+Toggle and select emit newline-delimited JSON: a `ready` event when another
+switch is allowed, followed by the final result when hooks finish.
 
 You can bind the toggle command using your own desktop configuration. ThemerToggle
 does not install, replace, or remove any keyboard bindings.
