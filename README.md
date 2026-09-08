@@ -55,9 +55,6 @@ The video records the native interface using original demonstration palettes
 and a mock theme setter. It illustrates the controls and previews; theme-switch
 timing depends on your Omarchy installation.
 
-Download the [MP4 video](assets/demo.mp4), [logo](assets/logo.svg), or
-[1280 × 640 social preview](assets/social-preview.png).
-
 ## Install
 
 Install ThemerToggle directly from this GitHub repository.
