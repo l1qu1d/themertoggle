@@ -1,0 +1,32 @@
+name: CI
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          path: plugin
+          persist-credentials: false
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          repository: omacom/omarchy
+          ref: 5b91db503c904bbfc5f34bdaaa9c708814958f3d
+          path: .ci-omarchy
+          persist-credentials: false
+      - name: Backend behavior
+        env:
+          OMARCHY_THEME_COLOR: ${{ github.workspace }}/.ci-omarchy/bin/omarchy-theme-color
+        run: python3 -m unittest discover -s plugin/tests -v
+      - name: Manifest compatibility
+        run: bash .ci-omarchy/bin/omarchy-plugin-validate plugin
