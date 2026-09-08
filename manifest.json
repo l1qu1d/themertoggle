@@ -1,0 +1,22 @@
+{
+  "schemaVersion": 1,
+  "id": "io.github.l1qu1d.themertoggle",
+  "name": "ThemerToggle",
+  "version": "1.0.0",
+  "author": "l1qu1d",
+  "description": "Your favorite light and dark themes, one click apart.",
+  "kinds": [
+    "bar-widget"
+  ],
+  "entryPoints": {
+    "barWidget": "ThemeSelector.qml"
+  },
+  "barWidget": {
+    "displayName": "ThemerToggle",
+    "category": "Appearance",
+    "allowMultiple": false,
+    "defaultSection": "right",
+    "defaults": {},
+    "schema": []
+  }
+}

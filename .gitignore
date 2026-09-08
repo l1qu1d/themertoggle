@@ -1,0 +1,8 @@
+__pycache__/
+*.pyc
+.agents/
+.codex/
+.env
+.env.*
+.DS_Store
+work/
