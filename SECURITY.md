@@ -18,7 +18,9 @@ It then saves the committed choice, releases the plugin lock, and allows another
 switch while supervising the earlier process through its remaining hooks. If that
 readiness contract is unavailable, it waits for normal command completion.
 
-The plugin makes no network requests, downloads no code, collects no telemetry,
+The Source button opens the fixed GitHub repository URL in your default browser
+only when clicked. The browser handles that navigation. The plugin itself makes
+no network requests, downloads no code, collects no telemetry,
 and accesses no account credentials. Preview images are local files loaded by Qt.
 No sudo or pkexec is required. It installs no services and edits no keyboard
 bindings. Omarchy's own theme command and user hooks may have additional effects.

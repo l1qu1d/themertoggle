@@ -50,7 +50,8 @@ stops when the shell loads the theme. Remaining hooks stay supervised and errors
 are still reported. If early readiness cannot be confirmed, the plugin waits for
 the command to finish.
 
-The selector header has a ThemerToggle icon, the installed version, and a close button.
+The selector header shows the name and installed version beside its logo.
+The Source button opens this repository in your browser; the X closes the menu.
 
 Mode detection follows Omarchy's own resolver, including custom palettes and
 overlays. The active theme is watched for changes made elsewhere. Theme lists

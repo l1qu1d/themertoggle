@@ -18,6 +18,9 @@ Panel {
   property int finishingActions: 0
   property int statusGeneration: 0
   property string pluginVersion: ""
+  readonly property alias sourceButton: sourceControl
+  readonly property url sourceUrl: "https://github.com/l1qu1d/themertoggle"
+  function openSource() { Qt.openUrlExternally(sourceUrl) }
   readonly property alias closeButton: closeControl
   readonly property alias versionLabel: versionText
   readonly property alias titleLabel: titleText
@@ -306,6 +309,7 @@ Panel {
         Layout.fillWidth: true
         implicitHeight: Style.space(48)
         Text {
+          id: headerLogo
           anchors.left: parent.left
           anchors.verticalCenter: parent.verticalCenter
           text: "󰔎"
@@ -315,11 +319,12 @@ Panel {
           Accessible.name: "ThemerToggle"
         }
         Column {
-          anchors.centerIn: parent
+          anchors.left: headerLogo.right
+          anchors.leftMargin: Style.space(12)
+          anchors.verticalCenter: parent.verticalCenter
           spacing: Style.space(3)
           Text {
             id: titleText
-            anchors.horizontalCenter: parent.horizontalCenter
             text: "ThemerToggle"
             color: Color.foreground
             font.family: Style.font.family
@@ -328,12 +333,25 @@ Panel {
           }
           Text {
             id: versionText
-            anchors.horizontalCenter: parent.horizontalCenter
             text: root.pluginVersion ? "v" + root.pluginVersion : ""
             color: Color.muted
             font.family: Style.font.family
             font.pixelSize: Style.font.caption
           }
+        }
+        Button {
+          id: sourceControl
+          anchors.right: closeControl.left
+          anchors.rightMargin: Style.space(4)
+          anchors.verticalCenter: parent.verticalCenter
+          width: Style.space(36)
+          height: Style.space(36)
+          fontSize: Style.space(20)
+          text: "󰊤"
+          tooltipText: "Source on GitHub"
+          Accessible.name: "Open ThemerToggle source on GitHub"
+          focusable: true
+          onClicked: root.openSource()
         }
         Button {
           id: closeControl
