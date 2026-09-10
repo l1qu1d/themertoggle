@@ -41,14 +41,14 @@ theme, see local previews, and choose a theme directly.
 
 ## Preview
 
-![ThemerToggle: one-click light and dark theme switching with a right-click theme selector](preview.png)
+![ThemerToggle: one-click light and dark theme switching with a right-click theme selector](https://raw.githubusercontent.com/l1qu1d/themertoggle/e0ead63fad20782a88b6aee1375e2e6e016275d0/preview.png)
 
 The illustration shows one-click theme switching and the right-click selector
 using demonstration palettes.
 
 ## Demo
 
-[![Watch the ThemerToggle demo](assets/demo.gif)](assets/demo.mp4)
+[![Watch the ThemerToggle demo](https://raw.githubusercontent.com/l1qu1d/themertoggle/e0ead63fad20782a88b6aee1375e2e6e016275d0/assets/demo.gif)](https://github.com/l1qu1d/themertoggle/blob/e0ead63fad20782a88b6aee1375e2e6e016275d0/assets/demo.mp4)
 
 Watch one-click light/dark switching, right-click theme selection, and enlarged
 hover previews.
