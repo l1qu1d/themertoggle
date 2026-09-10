@@ -21,7 +21,8 @@ library files are bundled; only the individual logo SVG described above is
 redistributed. Theme images displayed on a user's desktop belong to their
 respective authors; ThemerToggle reads them in place.
 
-The repository screenshots and demo video show the native plugin using original
-demonstration palettes and a mock theme setter. They do not redistribute an
-installed theme's wallpaper. System glyphs and text appear as rendered UI in the
-captures.
+The preview illustrations and demo wallpapers use generated original artwork.
+The demo video records the native plugin in an isolated desktop with a mock
+theme setter, then applies camera zooms and captions. It does not redistribute
+an installed theme's wallpaper. System glyphs and text appear as rendered UI in
+the native capture.

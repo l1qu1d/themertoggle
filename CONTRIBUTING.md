@@ -34,6 +34,15 @@ Describe observable behavior changes and the checks performed in pull requests.
 Report security issues through [SECURITY.md](SECURITY.md). Contributions are
 licensed under GPL-3.0-only.
 
+## Demo media
+
+Run `python3 tools/build-demo.py` with FFmpeg installed to rebuild the MP4 and
+GIF from `assets/source/demo-native.mp4`. The script applies camera zooms and
+captions to the continuous recording, preserving the relative positions of all
+desktop elements. It does not run the plugin or change desktop themes.
+See [the capture fixture](tools/demo/README.md) to record new source footage.
+Review both exports after rebuilding, especially menu and preview framing.
+
 ## CodeRabbit
 
 The root `.coderabbit.yaml` configures automatic reviews of non-draft pull

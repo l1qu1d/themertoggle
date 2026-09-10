@@ -41,19 +41,22 @@ theme, see local previews, and choose a theme directly.
 
 ## Preview
 
-![ThemerToggle selector preview](preview.png)
+![ThemerToggle: one-click light and dark theme switching with a right-click theme selector](preview.png)
 
-The screenshot uses original demonstration palettes to show the selector.
+The illustration shows one-click theme switching and the right-click selector
+using demonstration palettes.
 
 ## Demo
 
 [![Watch the ThemerToggle demo](assets/demo.gif)](assets/demo.mp4)
 
-Watch toolbar toggling, right-click theme selection, and enlarged hover previews.
+Watch one-click light/dark switching, right-click theme selection, and enlarged
+hover previews.
 
-The video records the native interface using original demonstration palettes
-and a mock theme setter. It illustrates the controls and previews; theme-switch
-timing depends on your Omarchy installation.
+The video captures the native plugin in an isolated desktop with original
+light and dark wallpapers and a mock theme setter. Camera zooms follow the
+interaction; the menu and enlarged preview keep their native positions.
+Theme-switch timing depends on your Omarchy installation.
 
 ## Install
 
